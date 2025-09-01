@@ -1,0 +1,25 @@
+services:
+  api:
+    build: .
+    image: weather-service:dev
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./:/app
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  test:
+    build: .
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: pytest -q
