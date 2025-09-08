@@ -17,7 +17,7 @@ pipeline {
     }
   }
   environment {
-    OPENWEATHER_API_KEY = credentials('')
+    OPENWEATHER_API_KEY = credentials('1ae22c96f65feed51923e80599a286f5')
   }
   options { timestamps() }
 }

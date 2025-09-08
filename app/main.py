@@ -6,7 +6,7 @@ app = FastAPI(title="Weather Service")
 history = []
 
 # Nutze eine feste ENV-Variable, z. B. OPENWEATHER_API_KEY
-API_KEY = ""
+API_KEY = "1ae22c96f65feed51923e80599a286f5"
 BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 @app.get("/weather")
