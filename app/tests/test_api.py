@@ -1,15 +1,14 @@
 from fastapi.testclient import TestClient
 import types
-from main import app, history
+from app.main import app, history
+import app.main as m
 
 client = TestClient(app)
 
 def setup_function():
-    # vor jedem Test History leeren
     history.clear()
 
 def test_weather_success(monkeypatch):
-    # Fake-Response der OpenWeather API
     class FakeResp:
         status_code = 200
         ok = True

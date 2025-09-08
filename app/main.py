@@ -6,7 +6,7 @@ app = FastAPI(title="Weather Service")
 history = []
 
 # Nutze eine feste ENV-Variable, z. B. OPENWEATHER_API_KEY
-API_KEY = os.getenv("OPENWEATHER_API_KEY", "94c5f5757edbfc9b24dd674ab1884dbc")
+API_KEY = ""
 BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 @app.get("/weather")
@@ -23,12 +23,14 @@ def get_weather(city: str = Query(..., min_length=1)):
         raise HTTPException(status_code=502, detail=f"Netzwerkfehler: {e}")
 
     if not r.ok:
-        # Versuche sinnvolle Fehlermeldung zurückzugeben
         try:
-            msg = r.json().get("message", r.text)
+            payload = r.json()
+            # Falls payload kein Dict ist, nimm String-Repräsentation
+            msg = payload.get("message") if isinstance(payload, dict) else str(payload)
         except Exception:
-            msg = r.text
+            msg = getattr(r, "text", "") or f"HTTP {r.status_code}"
         raise HTTPException(status_code=r.status_code, detail=f"Wetter-API: {msg}")
+
 
     data = r.json()
     entry = {
