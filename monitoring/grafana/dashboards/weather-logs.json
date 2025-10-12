@@ -1,0 +1,40 @@
+{
+  "id": null,
+  "uid": "weather-logs",
+  "title": "WeatherApp Logs",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "title": "Backend Application Logs",
+      "type": "logs",
+      "gridPos": {
+        "h": 18,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "dedupStrategy": "signature",
+        "enableLogDetails": true,
+        "showCommonLabels": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"docker-logs\", compose_service=~\"api|frontend\"}"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  }
+}
