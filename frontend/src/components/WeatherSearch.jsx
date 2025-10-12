@@ -1,19 +1,19 @@
 import { useState } from "react";
+import { fetchWeather } from "../lib/api";
 
 export default function WeatherSearch({ onResult }) {
   const [city, setCity] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
-  const fetchWeather = async () => {
+  const fetchData = async () => {
     setError("");
+    if (!city) {
+      setError("Bitte Stadt eingeben");
+      return;
+    }
     try {
-      const res = await fetch(`http://localhost:8000/weather?city=${city}`);
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Fehler beim Abrufen");
-      }
-      const data = await res.json();
+      const data = await fetchWeather(city);
       setResult(data);
       onResult(data);
     } catch (err) {
@@ -32,7 +32,7 @@ export default function WeatherSearch({ onResult }) {
           placeholder="Stadt eingeben..."
         />
         <button
-          onClick={fetchWeather}
+          onClick={fetchData}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           Suchen
@@ -46,6 +46,11 @@ export default function WeatherSearch({ onResult }) {
           </p>
           <p>🌡 {result.temp}°C (gefühlt {result.feels_like}°C)</p>
           <p>☁ {result.condition}</p>
+          {result.timestamp && (
+            <p className="text-sm text-gray-600">
+              🕒 {new Date(result.timestamp).toLocaleString()}
+            </p>
+          )}
         </div>
       )}
     </div>
