@@ -90,9 +90,9 @@
 
 ## 6. Tests und Qualitätssicherung
 - **Integrationstests:** REST-API mit Postman/Newman getestet.  
-- **Functional Tests:** Browser-Smoketests mit Playwright.  
-- **Load Tests:** Separater Jenkins-Job mit k6, um Ressourcen zu schonen.  
-- **Monitoring:** Docker-Logs werden via `promtail` an Grafana Loki weitergeleitet.
+- **Functional Tests:** Browser-Smoketests mit Playwright (`npm run test:e2e` im `frontend/`-Verzeichnis).
+- **Load Tests:** Separater Jenkins-Job mit k6, um Ressourcen zu schonen.
+- **Monitoring:** Docker-Logs werden via `promtail` an Grafana Loki weitergeleitet; Dashboards werden beim Starten des `grafana`-Services aus `docker-compose.yml` automatisch provisioniert.
 
 ---
 
