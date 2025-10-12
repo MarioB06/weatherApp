@@ -1,18 +1,19 @@
 import { useState } from "react";
+import { postAlert } from "../lib/api";
 
 export default function AlertForm() {
   const [message, setMessage] = useState("");
   const [response, setResponse] = useState(null);
 
   const sendAlert = async () => {
+    if (!message.trim()) {
+      setResponse({ msg: "Bitte eine Nachricht eingeben" });
+      return;
+    }
     try {
-      const res = await fetch("http://localhost:8000/alert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      });
-      const data = await res.json();
+      const data = await postAlert({ message });
       setResponse(data);
+      setMessage("");
     } catch (err) {
       setResponse({ msg: "Fehler beim Senden" });
     }

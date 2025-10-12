@@ -1,57 +1,75 @@
-from fastapi import FastAPI, HTTPException, Query
-import os, requests
+"""FastAPI-Anwendung für das Weather-Modul 324."""
 
-app = FastAPI(title="Weather Service")
+from __future__ import annotations
 
-history = []
+from typing import List
 
-# Nutze eine feste ENV-Variable, z. B. OPENWEATHER_API_KEY
-API_KEY = ""
-BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+from fastapi import Depends, FastAPI, HTTPException, Query
 
-@app.get("/weather")
-def get_weather(city: str = Query(..., min_length=1)):
-    params = {
-        "q": city,
-        "appid": API_KEY,
-        "units": "metric",
-        "lang": "de",
-    }
+from .config import Settings, get_settings
+from .models import Alert, AlertResponse, HealthResponse, HistoryEntry, WeatherReport
+from .storage import storage
+from .weather_service import (
+    WeatherServiceError,
+    WeatherServiceHTTPError,
+    fetch_weather_report,
+)
+
+
+app = FastAPI(title="Weather Service", version="1.0.0")
+
+
+@app.get("/healthz", response_model=HealthResponse, tags=["System"])
+async def healthcheck() -> HealthResponse:
+    """Einfache Monitoring-Route für Load-Balancer/Prometheus."""
+
+    return HealthResponse()
+
+
+@app.get("/weather", response_model=HistoryEntry, tags=["Weather"])
+async def get_weather(
+    city: str = Query(..., min_length=1, description="Stadtname"),
+    settings: Settings = Depends(get_settings),
+) -> HistoryEntry:
+    """Ruft das Wetter für eine Stadt ab und speichert es in der Historie."""
+
+    if not settings.openweather_api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="OPENWEATHER_API_KEY ist nicht gesetzt. Bitte ENV konfigurieren.",
+        )
+
     try:
-        r = requests.get(BASE_URL, params=params, timeout=10)
-    except requests.RequestException as e:
-        raise HTTPException(status_code=502, detail=f"Netzwerkfehler: {e}")
+        report: WeatherReport = await fetch_weather_report(
+            city=city,
+            api_key=settings.openweather_api_key,
+            base_url=settings.openweather_base_url,
+        )
+    except WeatherServiceHTTPError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=f"Wetter-API: {exc.detail}")
+    except WeatherServiceError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
 
-    if not r.ok:
-        try:
-            payload = r.json()
-            # Falls payload kein Dict ist, nimm String-Repräsentation
-            msg = payload.get("message") if isinstance(payload, dict) else str(payload)
-        except Exception:
-            msg = getattr(r, "text", "") or f"HTTP {r.status_code}"
-        raise HTTPException(status_code=r.status_code, detail=f"Wetter-API: {msg}")
-
-
-    data = r.json()
-    entry = {
-        "city": data.get("name", city),
-        "country": data.get("sys", {}).get("country"),
-        "temp": data.get("main", {}).get("temp"),
-        "feels_like": data.get("main", {}).get("feels_like"),
-        "condition": (data.get("weather") or [{}])[0].get("description"),
-    }
-    history.append(entry)
+    entry = storage.add_history(report)
     return entry
 
-@app.get("/history")
-def get_history():
-    return history
 
-@app.post("/history")
-def add_history(entry: dict):
-    history.append(entry)
-    return {"msg": "Eintrag hinzugefügt", "data": entry}
+@app.get("/history", response_model=List[HistoryEntry], tags=["Weather"])
+async def get_history() -> List[HistoryEntry]:
+    """Gibt die gespeicherten Wetterabfragen zurück."""
 
-@app.post("/alert")
-def add_alert(alert: dict):
-    return {"msg": "Alert gespeichert", "data": alert}
+    return storage.list_history()
+
+
+@app.post("/history", response_model=HistoryEntry, tags=["Weather"])
+async def add_history(entry: WeatherReport) -> HistoryEntry:
+    """Erlaubt es, eigene Einträge zur Historie hinzuzufügen (z. B. für Tests)."""
+
+    return storage.add_history(entry)
+
+
+@app.post("/alert", response_model=AlertResponse, tags=["Alerts"])
+async def add_alert(alert: Alert) -> AlertResponse:
+    """Dummy-Endpunkt, der Alerts entgegennimmt."""
+
+    return AlertResponse(msg="Alert gespeichert", data=alert)
