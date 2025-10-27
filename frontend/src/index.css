@@ -70,6 +70,16 @@ input:focus-visible {
   transform: translateY(-1px);
 }
 
+.bg-green-600 {
+  background-color: #16a34a;
+  transition: background-color 150ms ease-in-out, transform 150ms ease-in-out;
+}
+
+.bg-green-600:hover {
+  background-color: #15803d;
+  transform: translateY(-1px);
+}
+
 .text-white {
   color: #ffffff;
 }
